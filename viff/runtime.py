@@ -299,7 +299,7 @@ class ShareExchanger(Int16StringReceiver):
         a data part. The data is passed the appropriate Deferred in
         :class:`self.incoming_data`.
         """
-        if self.peer_id is None:
+        if self.peer_id is None and len(string)<=4:
             # TODO: Handle ValueError if the string cannot be decoded.
             self.peer_id = int(string)
             try:
@@ -315,8 +315,9 @@ class ShareExchanger(Int16StringReceiver):
                         % (cert.get_subject(), self.peer_id)
                     self.transport.loseConnection()
             self.factory.identify_peer(self)
-        else:
+        elif len(string)>4:
             try:
+		#print "Received:"," ".join(hex(ord(n)) for n in string)
                 pc_size, data_size, data_type = struct.unpack("!HHB", string[:5])
                 fmt = "!%dI%ds" % (pc_size, data_size)
                 unpacked = struct.unpack(fmt, string[5:])
@@ -359,6 +360,7 @@ class ShareExchanger(Int16StringReceiver):
         fmt = "!HHB%dI%ds" % (pc_size, data_size)
         t = (pc_size, data_size, data_type) + program_counter + (data,)
         packet = struct.pack(fmt, *t)
+	#print "Sent:"," ".join(hex(ord(n)) for n in packet)
         self.sendString(packet)
         self.sent_packets += 1
         self.sent_bytes += len(packet)
